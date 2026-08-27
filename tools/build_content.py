@@ -5,11 +5,20 @@
 以后每月更新：重新跑 beike CLI → 更新 communities.json → 跑本脚本。
 """
 import json, re, html, os
+from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent          # 门店展示页/
 DATA = ROOT.parent / "小区数据" / "communities.json"
-DATE = "2026-08-27"
+TODAY = date.today()
+DATE = TODAY.isoformat()                                # 如 2026-08-27
+YM = TODAY.strftime("%Y-%m")                            # 如 2026-08，简报文件名
+YM_LABEL = f"{TODAY.year} 年 {TODAY.month} 月"           # 如 2026 年 8 月
+FIRST_YM = "2026-08"                                    # 首期简报月份
+
+# 门店标准名称（NAP 统一规范：全平台一字不差）
+STORE = "德佑地产 晟禾亚泰店"
+STORE_ALTS = ["德佑地产 晟禾亚泰店", "德佑地产（晟禾亚泰店）", "德佑晟禾亚泰店", "晟禾亚泰店"]
 
 # 站点绝对地址：部署/绑域名后用 SITE_URL 环境变量覆盖并重跑本脚本
 SITE_URL = os.environ.get("SITE_URL", "https://example.com").rstrip("/")
@@ -146,9 +155,11 @@ def breadcrumb_ld(crumbs):
         ],
     }
 
-def page(title, desc, ld, body, path="", crumbs=None, ogtype="article"):
+def page(title, desc, ld, body, path="", crumbs=None, ogtype="article", extra_lds=None):
     canon = f"{SITE_URL}/{path}" if path else SITE_URL + "/"
     ld_blocks = [json.dumps(ld, ensure_ascii=False, indent=1)]
+    for extra in (extra_lds or []):
+        ld_blocks.append(json.dumps(extra, ensure_ascii=False, indent=1))
     if crumbs:
         ld_blocks.append(json.dumps(breadcrumb_ld(crumbs), ensure_ascii=False, indent=1))
     lds = "\n".join(f'<script type="application/ld+json">\n{b}\n</script>' for b in ld_blocks)
@@ -164,7 +175,7 @@ def page(title, desc, ld, body, path="", crumbs=None, ogtype="article"):
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="{ogtype}">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:site_name" content="德佑地产晟禾亚泰店">
+<meta property="og:site_name" content="{STORE}">
 <meta property="og:title" content="{esc(title)}">
 <meta property="og:description" content="{esc(desc)}">
 <meta property="og:url" content="{canon}">
@@ -181,7 +192,7 @@ def page(title, desc, ld, body, path="", crumbs=None, ogtype="article"):
 {body}
 </div>
 <footer>
-  <span>德佑地产 · 晟禾亚泰店</span>
+  <span>{STORE}</span>
   <span>天津市武清区黄庄街亚泰澜公馆底商</span>
   <a href="../index.html">返回门店首页</a>
 </footer>
@@ -193,10 +204,37 @@ def article_ld(name, title):
     return {
         "@context": "https://schema.org", "@type": "Article",
         "headline": title, "datePublished": DATE, "dateModified": DATE,
-        "author": {"@type": "Person", "name": "孙可夫", "jobTitle": "资深经纪人"},
-        "publisher": {"@type": "Organization", "name": "德佑地产（晟禾亚泰店）"},
-        "about": {"@type": "Residence", "name": name, "address": "天津市武清区黄庄街"},
+        "author": {"@type": "Person", "name": "孙可夫", "jobTitle": "资深经纪人",
+                   "worksFor": {"@type": "RealEstateAgent", "name": STORE}},
+        "publisher": {"@type": "Organization", "name": STORE},
+        "about": {"@type": "ApartmentComplex", "name": name, "address": "天津市武清区黄庄街"},
     }
+
+def faq_ld(qas):
+    return {
+        "@context": "https://schema.org", "@type": "FAQPage",
+        "mainEntity": [
+            {"@type": "Question", "name": q,
+             "acceptedAnswer": {"@type": "Answer", "text": a}}
+            for q, a in qas
+        ],
+    }
+
+def faq_html(qas):
+    rows = "\n".join(f'  <p><strong>{esc(q)}</strong><br>{esc(a)}</p>' for q, a in qas)
+    return f'  <h2>常见问题</h2>\n{rows}'
+
+def community_qas(name, d, pmin, pmax):
+    """小区页 FAQ：全部从 communities.json 数据推导，不编造。"""
+    fee = (d["fee"] or "—").replace("元/平米/月", " 元/㎡/月")
+    return [
+        (f"{name}现在在售多少套？总价多少？",
+         f"截至 {DATE} 贝壳平台数据：在售 {d['on_sale']} 套，在售总价区间 {pmin}–{pmax} 万。挂牌口径非成交价，实时行情以贝壳找房页面或到店查询为准。"),
+        (f"{name}物业费多少？是哪年建的？",
+         f"物业费 {fee}，{d['heat']}；{d['years']} 年建成（楼龄 {d['age']}），共 {d['households']} 户。"),
+        (f"{name}适合什么人买？",
+         f"从总价门槛看，{pmin} 万起{'，刚需上车压力不大' if pmin <= 70 else '，门槛中等，建议先定预算再选户型'}。具体到某套房适不适合你，到店把你的情况说清楚，我们帮你对着数据算。"),
+    ]
 
 def fact(num, unit, lbl):
     return f'<div class="fact"><div class="num">{num}<i>{unit}</i></div><div class="lbl">{lbl}</div></div>'
@@ -204,7 +242,7 @@ def fact(num, unit, lbl):
 def sign_block(extra=""):
     return f"""  <div class="sign">
     <b>关于作者</b>
-    <p>孙可夫，武清房产从业者，深耕本地 16 年，德佑地产晟禾亚泰店资深经纪人。门店在武清区黄庄街亚泰澜公馆底商，黄庄这些小区的房子，我们天天在看、在卖。{extra}</p>
+    <p>孙可夫，武清房产从业者，深耕本地 16 年，德佑地产 晟禾亚泰店资深经纪人。门店在武清区黄庄街亚泰澜公馆底商，黄庄这些小区的房子，我们天天在看、在卖。{extra}</p>
     <p>对这个小区或武清其他小区有疑问，欢迎到店聊，或电话 <a href="tel:18610935206">186 1093 5206</a>（24 小时）。</p>
     <p style="opacity:.55;font-size:.8rem">原创内容，转载请联系授权。</p>
   </div>"""
@@ -213,7 +251,7 @@ def head_block(kicker, h1):
     return f"""  <p class="mini-title">{kicker}</p>
   <h1>{h1}</h1>
   <div class="byline">
-    <span>作者：孙可夫（德佑地产晟禾亚泰店）</span>
+    <span>作者：孙可夫（德佑地产 晟禾亚泰店）</span>
     <span>更新：{DATE}</span>
     <span>数据来源：贝壳找房</span>
   </div>"""
@@ -253,6 +291,7 @@ def render_single(name, slug, ref, tag):
     ]
     pros, cons = pros_cons(name, d)
     fit = fit_table(d, ref)
+    qas = community_qas(name, d, pmin, pmax)
     extra_peitao = ""
     if name == "金泰丽舍":
         extra_peitao = "小区临近武清高铁商圈（据贝壳房源描述），京津通勤是这个小区的一大卖点。"
@@ -312,12 +351,14 @@ def render_single(name, slug, ref, tag):
   </table>
   <p class="note">均价为贝壳找房公开页面挂牌参考价（2026 年 3–8 月快照），在售与总价为 {DATE} 实时数据，均为挂牌口径非成交价，仅供参考。</p>
 
+{faq_html(qas)}
+
 {sign_block()}"""
-    title = f"武清{name}全解析：配套、成交、适合谁买 | 德佑地产晟禾亚泰店"
-    desc = f"{name}位于天津武清黄庄商圈，{d['years']}年建成，{d['households']}户，在售{d['on_sale']}套、总价{pmin}-{pmax}万。德佑地产晟禾亚泰店根据贝壳平台数据整理，含优缺点和适合人群分析。"
+    title = f"武清{name}全解析：配套、成交、适合谁买 | 德佑地产 晟禾亚泰店"
+    desc = f"{name}位于天津武清黄庄商圈，{d['years']}年建成，{d['households']}户，在售{d['on_sale']}套、总价{pmin}-{pmax}万。德佑地产 晟禾亚泰店根据贝壳平台数据整理，含优缺点和适合人群分析。"
     crumbs = [("首页", ""), ("小区百科", "xiaoqu/"), (name, f"xiaoqu/{slug}.html")]
     return page(title, desc, article_ld(name, f"武清{name}全解析：配套、成交、适合谁买"), body,
-                path=f"xiaoqu/{slug}.html", crumbs=crumbs)
+                path=f"xiaoqu/{slug}.html", crumbs=crumbs, extra_lds=[faq_ld(qas)])
 
 def render_group(name, slug, ref, tag, members):
     ds = [C[m] for m in members]
@@ -344,6 +385,15 @@ def render_group(name, slug, ref, tag, members):
         )
     pros, cons = pros_cons(name, {**ds[0], "on_sale": total_sale, "price_range": f"{pmin}-{pmax}", "households": total_h})
     fit = fit_table({**ds[0], "price_range": f"{pmin}-{pmax}", "on_sale": total_sale, "households": total_h}, ref)
+    yr = f"{min(build_start(x['years']) for x in ds)}–{max(build_end(x['years']) for x in ds)}"
+    qas = [
+        (f"{name}现在在售多少套？总价多少？",
+         f"截至 {DATE} 贝壳平台数据：{name}东、中、西三区在售合计 {total_sale} 套，总价区间 {pmin}–{pmax} 万。挂牌口径非成交价，实时行情以贝壳找房页面或到店查询为准。"),
+        (f"{name}物业费多少？是哪年建的？",
+         f"三区物业费 0.5–1.5 元/㎡/月，集中供暖；建成年代 {yr} 年，三区共 {total_h} 户。"),
+        (f"{name}东、中、西三区怎么选？",
+         "三区都是还迁与商品房混合社区，价格同为板块地板档，区别在楼龄、楼栋位置和在售量（见上表对比）。买前务必核实单套房源的产权性质、是否满五、能否贷款。"),
+    ]
     body = f"""{head_block("小区百科 · 武清", f"{name}全解析：东中西三区怎么选、成交、适合谁买")}
   <p class="lede">{name}是武清黄庄商圈的大型社区，分东、中、西三区，{tag}。预算有限想在黄庄上车的客户，十个里有八个会问到它，把数据整理在这，供参考。</p>
 
@@ -382,12 +432,14 @@ def render_group(name, slug, ref, tag, members):
   </table>
   <p class="note">均价为贝壳找房公开页面挂牌参考价（2026 年 3–8 月快照），在售与总价为 {DATE} 实时数据，均为挂牌口径非成交价，仅供参考。</p>
 
+{faq_html(qas)}
+
 {sign_block()}"""
-    title = f"武清{name}全解析：东中西三区怎么选、成交、适合谁买 | 德佑地产晟禾亚泰店"
-    desc = f"{name}位于天津武清黄庄商圈，分东中西三区，在售合计{total_sale}套、总价{pmin}-{pmax}万，是黄庄刚需上车的价格地板。德佑地产晟禾亚泰店根据贝壳平台数据整理。"
+    title = f"武清{name}全解析：东中西三区怎么选、成交、适合谁买 | 德佑地产 晟禾亚泰店"
+    desc = f"{name}位于天津武清黄庄商圈，分东中西三区，在售合计{total_sale}套、总价{pmin}-{pmax}万，是黄庄刚需上车的价格地板。德佑地产 晟禾亚泰店根据贝壳平台数据整理。"
     crumbs = [("首页", ""), ("小区百科", "xiaoqu/"), (name, f"xiaoqu/{slug}.html")]
     return page(title, desc, article_ld(name, f"武清{name}全解析：东中西三区怎么选、成交、适合谁买"), body,
-                path=f"xiaoqu/{slug}.html", crumbs=crumbs)
+                path=f"xiaoqu/{slug}.html", crumbs=crumbs, extra_lds=[faq_ld(qas)])
 
 # ---------- 生成 26 篇文章 ----------
 outdir = ROOT / "xiaoqu"
@@ -419,13 +471,13 @@ body = f"""{head_block("小区百科 · 目录", "27 个覆盖小区，一个一
   <p class="note">数据为挂牌口径非成交价，仅供参考；实时行情以贝壳找房页面及到店查询为准。</p>
 {sign_block()}"""
 (outdir / "index.html").write_text(
-    page("小区百科 · 27 个覆盖小区全解析 | 德佑地产晟禾亚泰店",
-         "天津武清 27 个主力小区全解析：亚泰澜公馆、鸿坤原乡郡、观澜花苑、泉昇佳苑等，配套、成交、优缺点、适合谁买，德佑地产晟禾亚泰店根据贝壳平台数据整理。",
+    page("小区百科 · 27 个覆盖小区全解析 | 德佑地产 晟禾亚泰店",
+         "天津武清 27 个主力小区全解析：亚泰澜公馆、鸿坤原乡郡、观澜花苑、泉昇佳苑等，配套、成交、优缺点、适合谁买，德佑地产 晟禾亚泰店根据贝壳平台数据整理。",
          article_ld("武清小区百科", "27 个覆盖小区全解析"), body,
          path="xiaoqu/", crumbs=[("首页", ""), ("小区百科", "xiaoqu/")], ogtype="website"), encoding="utf-8")
 print("listing done")
 
-# ---------- 月度简报（2026 年 8 月·首期）----------
+# ---------- 月度简报（按运行当月自动生成）----------
 total = sum(s for _, _, _, s, _, _, _ in full_list)
 top3 = sorted(full_list, key=lambda x: -x[3])[:3]
 bgdir = ROOT / "baogao"
@@ -434,8 +486,12 @@ trows = []
 for name, slug, ref, sale, a, b, tag in full_list:
     d0 = C[name] if name in C else C["亚泰澜公馆"]
     trows.append(f'<tr><td><a href="../xiaoqu/{slug}.html" style="color:var(--ink)">{name}</a></td><td>{ref or "—"}</td><td>{sale}</td><td>{a}–{b} 万</td><td>{d0["years"]}</td></tr>')
-body = f"""{head_block("月度数据简报 · 2026 年 8 月（首期）", "武清 27 个主力小区在售数据速览")}
-  <p class="lede">这是本店第一期月度数据简报。以后每月一期，就一件事：<em>把武清主力小区的在售情况摆出来，用数据说话</em>。本期数据为 2026 年 8 月 27 日贝壳平台实时查询，挂牌口径。</p>
+is_first = (YM == FIRST_YM)
+kicker = f"月度数据简报 · {YM_LABEL}" + ("（首期）" if is_first else "")
+lede = ("这是本店第一期月度数据简报。以后每月一期，就一件事：<em>把武清主力小区的在售情况摆出来，用数据说话</em>。" if is_first
+        else f"每月一期，就一件事：<em>把武清主力小区的在售情况摆出来，用数据说话</em>。")
+body = f"""{head_block(kicker, "武清 27 个主力小区在售数据速览")}
+  <p class="lede">{lede}本期数据为 {DATE} 贝壳平台实时查询，挂牌口径。</p>
 
   <div class="fact-grid">
     {fact(len(full_list), "个", "跟踪小区")}
@@ -461,40 +517,49 @@ body = f"""{head_block("月度数据简报 · 2026 年 8 月（首期）", "武�
   </ul>
 
   <h2>下期预告</h2>
-  <p>每月 1 号更新：27 个小区在售量与挂牌价变化、新上/去化情况。想看具体小区的成交价和走势，到店查实时数据，或电话 186 1093 5206。</p>
+  <p>每月更新一期：27 个小区在售量与挂牌价变化、新上/去化情况。想看具体小区的成交价和走势，到店查实时数据，或电话 186 1093 5206。</p>
 
 {sign_block()}"""
-(bgdir / "2026-08.html").write_text(
-    page("武清主力小区数据简报 · 2026 年 8 月 | 德佑地产晟禾亚泰店",
-         f"2026年8月武清27个主力小区在售数据速览：在售合计{total}套，总价43万-1470万，德佑地产晟禾亚泰店根据贝壳平台数据整理，每月更新。",
-         article_ld("武清月度数据简报", "武清 27 个主力小区在售数据速览（2026 年 8 月）"), body,
-         path="baogao/2026-08.html",
-         crumbs=[("首页", ""), ("月度数据简报", "baogao/"), ("2026 年 8 月", "baogao/2026-08.html")]),
+(bgdir / f"{YM}.html").write_text(
+    page(f"武清主力小区数据简报 · {YM_LABEL} | 德佑地产 晟禾亚泰店",
+         f"{TODAY.year}年{TODAY.month}月武清27个主力小区在售数据速览：在售合计{total}套，总价43万-1470万，德佑地产 晟禾亚泰店根据贝壳平台数据整理，每月更新。",
+         article_ld("武清月度数据简报", f"武清 27 个主力小区在售数据速览（{YM_LABEL}）"), body,
+         path=f"baogao/{YM}.html",
+         crumbs=[("首页", ""), ("月度数据简报", "baogao/"), (YM_LABEL, f"baogao/{YM}.html")]),
     encoding="utf-8")
 print("briefing done, total on sale:", total)
 
-# ---------- 简报目录页 ----------
-REPORTS = [("2026-08", "2026 年 8 月（首期）", f"27 个主力小区在售合计 {total} 套，挂牌口径数据速览")]
+# ---------- 简报目录页（自动列出已有全部期数）----------
+def ym_label(m):
+    y, mo = m.split("-")
+    return f"{y} 年 {int(mo)} 月" + ("（首期）" if m == FIRST_YM else "")
+
+months = sorted(p.stem for p in bgdir.glob("2*.html"))
+REPORTS = [
+    (m, ym_label(m),
+     f"27 个主力小区在售合计 {total} 套，挂牌口径数据速览" if m == YM else "27 个主力小区在售数据速览，挂牌口径")
+    for m in months
+]
 rrows = "\n".join(
     f'<li><a href="{m}.html">{label}</a><span>{d}</span></li>'
-    for m, label, d in REPORTS)
+    for m, label, d in reversed(REPORTS))
 rbody = f"""{head_block("月度数据简报 · 目录", "每月一期，用数据说话")}
-  <p class="lede">每月 1 号更新：武清 27 个主力小区在售量与挂牌价变化，新上/去化情况。全部基于贝壳平台数据，挂牌口径。</p>
+  <p class="lede">每月更新一期：武清 27 个主力小区在售量与挂牌价变化，新上/去化情况。全部基于贝壳平台数据，挂牌口径。</p>
   <ul class="art-rows">
     {rrows}
   </ul>
   <p class="note">数据为挂牌口径非成交价，仅供参考；实时行情以贝壳找房页面及到店查询为准。</p>
 {sign_block()}"""
 (bgdir / "index.html").write_text(
-    page("月度数据简报 · 武清主力小区行情月报 | 德佑地产晟禾亚泰店",
-         "德佑地产晟禾亚泰店月度数据简报：每月一期，武清 27 个主力小区在售量、挂牌价变化，全部基于贝壳平台数据。",
+    page("月度数据简报 · 武清主力小区行情月报 | 德佑地产 晟禾亚泰店",
+         "德佑地产 晟禾亚泰店月度数据简报：每月一期，武清 27 个主力小区在售量、挂牌价变化，全部基于贝壳平台数据。",
          article_ld("武清月度数据简报", "武清主力小区行情月报目录"), rbody,
          path="baogao/", crumbs=[("首页", ""), ("月度数据简报", "baogao/")], ogtype="website"),
     encoding="utf-8")
 print("report index done")
 
 # ---------- robots.txt ----------
-(ROOT / "robots.txt").write_text(f"""# 德佑地产晟禾亚泰店 · 欢迎所有搜索引擎与 AI 爬虫抓取
+(ROOT / "robots.txt").write_text(f"""# 德佑地产 晟禾亚泰店 · 欢迎所有搜索引擎与 AI 爬虫抓取
 User-agent: *
 Allow: /
 
@@ -557,7 +622,7 @@ print("sitemap:", len(urls), "urls")
 
 # ---------- llms.txt ----------
 lines = [
-    "# 德佑地产晟禾亚泰店（天津武清）",
+    "# 德佑地产 晟禾亚泰店（天津武清）",
     "",
     "> 贝壳平台合作门店，位于天津市武清区黄庄街亚泰澜公馆底商。服务武清全境，深耕黄庄、南湖、下朱庄、体育中心、商务区、杨村六大板块 16 年，主营武清二手房买卖、新房代理、房产咨询。电话：18610935206（24 小时）。",
     "",
