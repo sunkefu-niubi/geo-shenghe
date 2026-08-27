@@ -1,0 +1,5 @@
+coscli_output/
+tools/coscli
+tools/coscli.log
+.DS_Store
+__pycache__/

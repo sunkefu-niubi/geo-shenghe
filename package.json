@@ -1,0 +1,9 @@
+{
+  "name": "deyou-shengtai-store",
+  "private": true,
+  "version": "1.0.0",
+  "description": "德佑地产晟禾亚泰店 门店展示页（GEO 落地页）",
+  "scripts": {
+    "dev": "python3 serve.py"
+  }
+}

@@ -1,0 +1,55 @@
+:root{
+  --cream:#F8F7F4; --cream-text:#EFE7DB; --ink:#0e2b46; --red:#ef4136;
+  --body:#3A4A57; --muted:#7d8a95; --line:rgba(14,43,70,.14);
+  --serif:Georgia,"Times New Roman","Songti SC","STSong",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--cream);color:var(--body);font-family:var(--sans);font-size:17px;line-height:1.95;-webkit-font-smoothing:antialiased}
+::selection{background:var(--red);color:var(--cream-text)}
+header{display:flex;align-items:center;justify-content:space-between;padding:1.6rem 4vw;border-bottom:1px solid var(--line)}
+.brand{font-family:var(--serif);font-size:1.1rem;letter-spacing:.12em;font-weight:700;color:var(--ink)}
+.brand em{font-style:normal;color:var(--red)}
+header a.back{color:var(--muted);text-decoration:none;font-size:.8rem;letter-spacing:.2em}
+header a.back:hover{color:var(--red)}
+.wrap{max-width:780px;margin:0 auto;padding:4.5rem 4vw 5rem}
+.mini-title{display:flex;align-items:center;gap:1rem;font-size:.76rem;letter-spacing:.3em;text-transform:uppercase;font-weight:600;color:var(--ink)}
+.mini-title::before{content:"";width:60px;height:2px;background:var(--red);flex:none}
+h1{font-family:var(--serif);color:var(--ink);font-size:clamp(1.9rem,4.5vw,2.9rem);line-height:1.4;margin:1.6rem 0 1.2rem}
+.byline{display:flex;flex-wrap:wrap;gap:.4rem 1.6rem;font-size:.8rem;letter-spacing:.1em;color:var(--muted);padding-bottom:2.2rem;border-bottom:1px solid var(--line)}
+.lede{margin-top:2.2rem;font-size:1.06rem}
+.lede em{font-style:normal;color:var(--red);font-weight:600}
+h2{font-family:var(--serif);color:var(--ink);font-size:1.5rem;margin:3.2rem 0 1.2rem;display:flex;align-items:center;gap:.9rem}
+h2::before{content:"";width:34px;height:2px;background:var(--red);flex:none}
+p+p{margin-top:1rem}
+table{width:100%;border-collapse:collapse;margin:1.4rem 0;font-size:.94rem}
+th,td{text-align:left;padding:.7rem .9rem;border-top:1px solid var(--line)}
+th{color:var(--muted);font-weight:600;font-size:.76rem;letter-spacing:.14em;text-transform:uppercase;border-top:none}
+td:first-child{color:var(--ink);font-weight:600}
+.fact-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.8rem;margin:1.8rem 0;padding:1.8rem 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.fact .num{font-family:var(--serif);font-size:1.9rem;color:var(--ink);line-height:1.15}
+.fact .num i{font-style:normal;font-size:.5em;color:var(--red)}
+.fact .lbl{font-size:.72rem;letter-spacing:.2em;color:var(--muted);margin-top:.3rem;text-transform:uppercase}
+@media (max-width:640px){.fact-grid{grid-template-columns:repeat(2,1fr)}}
+ul.plain{list-style:none;margin:1rem 0}
+ul.plain li{padding:.55rem 0 .55rem 1.4rem;position:relative}
+ul.plain li::before{content:"";width:7px;height:7px;background:var(--red);position:absolute;left:0;top:1.05em}
+.note{font-size:.82rem;color:var(--muted);border-top:1px dashed var(--line);margin-top:1.2rem;padding-top:.9rem}
+.fill{background:rgba(239,65,54,.07);padding:.1em .4em;color:var(--red);font-weight:600}
+figure{margin:2rem 0}
+figure img{width:100%;aspect-ratio:21/9;object-fit:cover}
+figcaption{font-size:.76rem;letter-spacing:.16em;color:var(--muted);margin-top:.6rem;text-transform:uppercase}
+.sign{margin-top:3.5rem;padding:2.2rem;background:var(--ink);color:var(--cream-text)}
+.sign b{display:block;font-size:.7rem;letter-spacing:.26em;text-transform:uppercase;opacity:.55;margin-bottom:.8rem}
+.sign p{font-size:.95rem}
+.sign p+p{margin-top:.7rem}
+.sign a{color:var(--cream-text)}
+footer{background:var(--red);color:var(--cream-text);padding:1.6rem 4vw;display:flex;flex-wrap:wrap;justify-content:space-between;gap:.5rem 2rem;font-size:.74rem;letter-spacing:.16em;text-transform:uppercase}
+footer a{color:var(--cream-text);text-decoration:none}
+/* 列表页/简报 */
+.art-rows{list-style:none;margin-top:2rem}
+.art-rows li{display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;padding:1rem 0;border-top:1px solid var(--line)}
+.art-rows a{color:var(--ink);text-decoration:none;font-weight:600}
+.art-rows a:hover{color:var(--red)}
+.art-rows span{color:var(--muted);font-size:.85rem;white-space:nowrap}
+@media (max-width:560px){.art-rows li{flex-direction:column;gap:.2rem}}
