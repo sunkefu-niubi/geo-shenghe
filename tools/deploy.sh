@@ -4,13 +4,13 @@
 # 备案通过换绑正式域名后：把 SITE 改成 https://域名，重跑一次即可（sitemap/canonical 会跟着变）
 set -e
 
-SITE="http://82.156.182.65:8088"
+SITE="http://49.233.77.113:8088"
 BUCKET="shengyatai-web-1428215718"
 COS_BASE="https://$BUCKET.cos.ap-beijing.myqcloud.com"
-INSTANCE="lhins-5ta2e7fo"
+SERVER="49.233.77.113"          # 企业主体新服务器（CVM ins-rvezyu07）
+SSH_KEY="$HOME/.ssh/geo_ent_deploy"
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
 COSCLI="$DIR/tools/coscli"
-TCCLI="/Users/sunkefu/Library/Application Support/kimi-desktop/daimon-share/daimon/runtime/python/.venv/bin/tccli"
 STAGE=/tmp/geo_deploy
 GIT_REMOTE="git@github.com:sunkefu-niubi/geo-shenghe.git"
 
@@ -34,20 +34,9 @@ echo "== 3/5 上传 COS =="
 "$COSCLI" cp -r "$STAGE"/ "cos://$BUCKET/" 2>&1 | tail -1
 
 echo "== 4/5 服务器拉取上线 =="
-# 服务器上的 /root/geo_pull.sh 按清单从 COS 拉文件到 /var/www/geo 并重载 nginx
-# 注意：tccli tat RunCommand 的 --Content 必须是命令整体的 base64
-CMD_B64=$(printf 'bash /root/geo_pull.sh' | base64)
-INV=$("$TCCLI" tat RunCommand --InstanceIds "[\"$INSTANCE\"]" \
-  --CommandType SHELL --Username root --Timeout 300 \
-  --Content "$CMD_B64" \
-  | python3 -c "import json,sys; print(json.load(sys.stdin)['InvocationId'])")
-echo "  TAT 任务: $INV"
-sleep 8
-OUT=$("$TCCLI" tat DescribeInvocationTasks \
-  --Filters "[{\"Name\":\"invocation-id\",\"Values\":[\"$INV\"]}]" --HideOutput false \
-  | python3 -c "import json,sys,base64; t=json.load(sys.stdin)['InvocationTaskSet'][0]; print(t['TaskStatus']); print(base64.b64decode(t['TaskResult']['Output']).decode('utf-8','replace'))")
-echo "$OUT" | tail -3
-echo "$OUT" | grep -q "DEPLOY_OK" || { echo "!! 服务器拉取失败，中止"; exit 1; }
+# 新服务器（企业账号 CVM）走 SSH：/root/geo_pull.sh 按清单从 COS 拉文件到 /var/www/geo 并重载 nginx
+ssh -i "$SSH_KEY" -o BatchMode=yes -o ConnectTimeout=20 root@"$SERVER" 'bash /root/geo_pull.sh' | tee /tmp/geo_pull_out.txt
+grep -q "DEPLOY_OK" /tmp/geo_pull_out.txt || { echo "!! 服务器拉取失败，中止"; exit 1; }
 
 echo "== 5/5 GitHub 备份 + 在线校验 =="
 cd "$DIR"

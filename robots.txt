@@ -42,4 +42,4 @@ Allow: /
 User-agent: meta-externalagent
 Allow: /
 
-Sitemap: http://82.156.182.65:8088/sitemap.xml
+Sitemap: http://49.233.77.113:8088/sitemap.xml
