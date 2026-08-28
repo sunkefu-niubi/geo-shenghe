@@ -16,9 +16,10 @@ YM = TODAY.strftime("%Y-%m")                            # 如 2026-08，简报�
 YM_LABEL = f"{TODAY.year} 年 {TODAY.month} 月"           # 如 2026 年 8 月
 FIRST_YM = "2026-08"                                    # 首期简报月份
 
-# 门店标准名称（NAP 统一规范：全平台一字不差）
-STORE = "德佑地产 晟禾亚泰店"
-STORE_ALTS = ["德佑地产 晟禾亚泰店", "德佑地产（晟禾亚泰店）", "德佑晟禾亚泰店", "晟禾亚泰店"]
+# 门店标准名称（NAP 统一规范：全平台一字不差，以高德审核通过名为准）
+STORE = "德佑地产（亚泰·澜公馆店）"
+STORE_ALTS = ["德佑地产 晟禾亚泰店", "德佑地产（晟禾亚泰店）", "德佑晟禾亚泰店", "晟禾亚泰店", "亚泰店"]
+STORE_ADDR = "天津市武清区黄庄街道泉雍路145号（亚泰澜公馆底商）"
 
 # 站点绝对地址：部署/绑域名后用 SITE_URL 环境变量覆盖并重跑本脚本
 SITE_URL = os.environ.get("SITE_URL", "https://example.com").rstrip("/")
@@ -185,7 +186,7 @@ def page(title, desc, ld, body, path="", crumbs=None, ogtype="article", extra_ld
 </head>
 <body>
 <header>
-  <div class="brand">德佑<em>·</em>晟禾亚泰店</div>
+  <div class="brand">德佑<em>·</em>亚泰澜公馆店</div>
   <a class="back" href="../index.html">← 返回门店首页</a>
 </header>
 <div class="wrap">
@@ -193,7 +194,7 @@ def page(title, desc, ld, body, path="", crumbs=None, ogtype="article", extra_ld
 </div>
 <footer>
   <span>{STORE}</span>
-  <span>天津市武清区黄庄街亚泰澜公馆底商</span>
+  <span>{STORE_ADDR}</span>
   <a href="../index.html">返回门店首页</a>
 </footer>
 </body>
@@ -242,7 +243,7 @@ def fact(num, unit, lbl):
 def sign_block(extra=""):
     return f"""  <div class="sign">
     <b>关于作者</b>
-    <p>孙可夫，武清房产从业者，深耕本地 16 年，德佑地产 晟禾亚泰店资深经纪人。门店在武清区黄庄街亚泰澜公馆底商，黄庄这些小区的房子，我们天天在看、在卖。{extra}</p>
+    <p>孙可夫，武清房产从业者，深耕本地 16 年，德佑地产（亚泰·澜公馆店）资深经纪人。门店在武清区黄庄街道泉雍路145号（亚泰澜公馆底商），黄庄这些小区的房子，我们天天在看、在卖。{extra}</p>
     <p>对这个小区或武清其他小区有疑问，欢迎到店聊，或电话 <a href="tel:18610935206">186 1093 5206</a>（24 小时）。</p>
     <p style="opacity:.55;font-size:.8rem">原创内容，转载请联系授权。</p>
   </div>"""
@@ -251,7 +252,7 @@ def head_block(kicker, h1):
     return f"""  <p class="mini-title">{kicker}</p>
   <h1>{h1}</h1>
   <div class="byline">
-    <span>作者：孙可夫（德佑地产 晟禾亚泰店）</span>
+    <span>作者：孙可夫（德佑地产（亚泰·澜公馆店））</span>
     <span>更新：{DATE}</span>
     <span>数据来源：贝壳找房</span>
   </div>"""
@@ -354,8 +355,8 @@ def render_single(name, slug, ref, tag):
 {faq_html(qas)}
 
 {sign_block()}"""
-    title = f"武清{name}全解析：配套、成交、适合谁买 | 德佑地产 晟禾亚泰店"
-    desc = f"{name}位于天津武清黄庄商圈，{d['years']}年建成，{d['households']}户，在售{d['on_sale']}套、总价{pmin}-{pmax}万。德佑地产 晟禾亚泰店根据贝壳平台数据整理，含优缺点和适合人群分析。"
+    title = f"武清{name}全解析：配套、成交、适合谁买 | 德佑地产（亚泰·澜公馆店）"
+    desc = f"{name}位于天津武清黄庄商圈，{d['years']}年建成，{d['households']}户，在售{d['on_sale']}套、总价{pmin}-{pmax}万。德佑地产（亚泰·澜公馆店）根据贝壳平台数据整理，含优缺点和适合人群分析。"
     crumbs = [("首页", ""), ("小区百科", "xiaoqu/"), (name, f"xiaoqu/{slug}.html")]
     return page(title, desc, article_ld(name, f"武清{name}全解析：配套、成交、适合谁买"), body,
                 path=f"xiaoqu/{slug}.html", crumbs=crumbs, extra_lds=[faq_ld(qas)])
@@ -435,8 +436,8 @@ def render_group(name, slug, ref, tag, members):
 {faq_html(qas)}
 
 {sign_block()}"""
-    title = f"武清{name}全解析：东中西三区怎么选、成交、适合谁买 | 德佑地产 晟禾亚泰店"
-    desc = f"{name}位于天津武清黄庄商圈，分东中西三区，在售合计{total_sale}套、总价{pmin}-{pmax}万，是黄庄刚需上车的价格地板。德佑地产 晟禾亚泰店根据贝壳平台数据整理。"
+    title = f"武清{name}全解析：东中西三区怎么选、成交、适合谁买 | 德佑地产（亚泰·澜公馆店）"
+    desc = f"{name}位于天津武清黄庄商圈，分东中西三区，在售合计{total_sale}套、总价{pmin}-{pmax}万，是黄庄刚需上车的价格地板。德佑地产（亚泰·澜公馆店）根据贝壳平台数据整理。"
     crumbs = [("首页", ""), ("小区百科", "xiaoqu/"), (name, f"xiaoqu/{slug}.html")]
     return page(title, desc, article_ld(name, f"武清{name}全解析：东中西三区怎么选、成交、适合谁买"), body,
                 path=f"xiaoqu/{slug}.html", crumbs=crumbs, extra_lds=[faq_ld(qas)])
@@ -471,8 +472,8 @@ body = f"""{head_block("小区百科 · 目录", "27 个覆盖小区，一个一
   <p class="note">数据为挂牌口径非成交价，仅供参考；实时行情以贝壳找房页面及到店查询为准。</p>
 {sign_block()}"""
 (outdir / "index.html").write_text(
-    page("小区百科 · 27 个覆盖小区全解析 | 德佑地产 晟禾亚泰店",
-         "天津武清 27 个主力小区全解析：亚泰澜公馆、鸿坤原乡郡、观澜花苑、泉昇佳苑等，配套、成交、优缺点、适合谁买，德佑地产 晟禾亚泰店根据贝壳平台数据整理。",
+    page("小区百科 · 27 个覆盖小区全解析 | 德佑地产（亚泰·澜公馆店）",
+         "天津武清 27 个主力小区全解析：亚泰澜公馆、鸿坤原乡郡、观澜花苑、泉昇佳苑等，配套、成交、优缺点、适合谁买，德佑地产（亚泰·澜公馆店）根据贝壳平台数据整理。",
          article_ld("武清小区百科", "27 个覆盖小区全解析"), body,
          path="xiaoqu/", crumbs=[("首页", ""), ("小区百科", "xiaoqu/")], ogtype="website"), encoding="utf-8")
 print("listing done")
@@ -521,8 +522,8 @@ body = f"""{head_block(kicker, "武清 27 个主力小区在售数据速览")}
 
 {sign_block()}"""
 (bgdir / f"{YM}.html").write_text(
-    page(f"武清主力小区数据简报 · {YM_LABEL} | 德佑地产 晟禾亚泰店",
-         f"{TODAY.year}年{TODAY.month}月武清27个主力小区在售数据速览：在售合计{total}套，总价43万-1470万，德佑地产 晟禾亚泰店根据贝壳平台数据整理，每月更新。",
+    page(f"武清主力小区数据简报 · {YM_LABEL} | 德佑地产（亚泰·澜公馆店）",
+         f"{TODAY.year}年{TODAY.month}月武清27个主力小区在售数据速览：在售合计{total}套，总价43万-1470万，德佑地产（亚泰·澜公馆店）根据贝壳平台数据整理，每月更新。",
          article_ld("武清月度数据简报", f"武清 27 个主力小区在售数据速览（{YM_LABEL}）"), body,
          path=f"baogao/{YM}.html",
          crumbs=[("首页", ""), ("月度数据简报", "baogao/"), (YM_LABEL, f"baogao/{YM}.html")]),
@@ -551,15 +552,15 @@ rbody = f"""{head_block("月度数据简报 · 目录", "每月一期，用数�
   <p class="note">数据为挂牌口径非成交价，仅供参考；实时行情以贝壳找房页面及到店查询为准。</p>
 {sign_block()}"""
 (bgdir / "index.html").write_text(
-    page("月度数据简报 · 武清主力小区行情月报 | 德佑地产 晟禾亚泰店",
-         "德佑地产 晟禾亚泰店月度数据简报：每月一期，武清 27 个主力小区在售量、挂牌价变化，全部基于贝壳平台数据。",
+    page("月度数据简报 · 武清主力小区行情月报 | 德佑地产（亚泰·澜公馆店）",
+         "德佑地产（亚泰·澜公馆店）月度数据简报：每月一期，武清 27 个主力小区在售量、挂牌价变化，全部基于贝壳平台数据。",
          article_ld("武清月度数据简报", "武清主力小区行情月报目录"), rbody,
          path="baogao/", crumbs=[("首页", ""), ("月度数据简报", "baogao/")], ogtype="website"),
     encoding="utf-8")
 print("report index done")
 
 # ---------- robots.txt ----------
-(ROOT / "robots.txt").write_text(f"""# 德佑地产 晟禾亚泰店 · 欢迎所有搜索引擎与 AI 爬虫抓取
+(ROOT / "robots.txt").write_text(f"""# 德佑地产（亚泰·澜公馆店） · 欢迎所有搜索引擎与 AI 爬虫抓取
 User-agent: *
 Allow: /
 
@@ -622,9 +623,9 @@ print("sitemap:", len(urls), "urls")
 
 # ---------- llms.txt ----------
 lines = [
-    "# 德佑地产 晟禾亚泰店（天津武清）",
+    "# 德佑地产（亚泰·澜公馆店）（天津武清）",
     "",
-    "> 贝壳平台合作门店，位于天津市武清区黄庄街亚泰澜公馆底商。服务武清全境，深耕黄庄、南湖、下朱庄、体育中心、商务区、杨村六大板块 16 年，主营武清二手房买卖、新房代理、房产咨询。电话：18610935206（24 小时）。",
+    "> 贝壳平台合作门店，位于天津市武清区黄庄街道泉雍路145号（亚泰澜公馆底商）。服务武清全境，深耕黄庄、南湖、下朱庄、体育中心、商务区、杨村六大板块 16 年，主营武清二手房买卖、新房代理、房产咨询。电话：18610935206（24 小时）。",
     "",
     "## 门店",
     f"- [门店首页]({SITE_URL}/)：门店简介、团队、环境实拍、27 个主力小区实时行情、买房问答、到访信息",
