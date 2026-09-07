@@ -4,7 +4,7 @@
 # 备案通过换绑正式域名后：把 SITE 改成 https://域名，重跑一次即可（sitemap/canonical 会跟着变）
 set -e
 
-SITE="http://49.233.77.113:8088"
+SITE="http://www.shenghedichan.com.cn"
 BUCKET="shengyatai-web-1428215718"
 COS_BASE="https://$BUCKET.cos.ap-beijing.myqcloud.com"
 SERVER="49.233.77.113"          # 企业主体新服务器（CVM ins-rvezyu07）

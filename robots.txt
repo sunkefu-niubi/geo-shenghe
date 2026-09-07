@@ -42,4 +42,4 @@ Allow: /
 User-agent: meta-externalagent
 Allow: /
 
-Sitemap: http://49.233.77.113:8088/sitemap.xml
+Sitemap: http://www.shenghedichan.com.cn/sitemap.xml
